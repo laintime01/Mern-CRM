@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Client = require('../models/Client');
+const validate = require('../middleware/validate');
+
 
 // @route   POST api/clients
 // @desc    Create a new client
@@ -32,14 +34,25 @@ router.post('/', auth, async (req, res) => {
 // @desc    Get all clients
 // @access  Private
 router.get('/', auth, async (req, res) => {
-  try {
-    const clients = await Client.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
-    res.json(clients);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+    try {
+      const { status, priority, assignedTo } = req.query;
+      let query = {};
+  
+      if (status) query.status = status;
+      if (priority) query.priority = priority;
+      if (assignedTo) query.assignedTo = assignedTo;
+  
+      const tasks = await Task.find(query)
+        .sort({ createdAt: -1 })
+        .populate('assignedTo', ['name', 'email'])
+        .populate('relatedTo')
+        .populate('createdBy', ['name', 'email']);
+      res.json(tasks);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
 
 // @route   GET api/clients/:id
 // @desc    Get client by ID
