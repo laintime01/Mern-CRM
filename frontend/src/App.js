@@ -6,14 +6,15 @@ import ClientManagement from './components/ClientManagement';
 import ServiceRequests from './components/ServiceRequests';
 import TaskManagement from './components/TaskManagement';
 import Integration from './components/Integration';
+import Navigation from './components/Navigation';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />}>
-          <Route index element={<h2 className="text-2xl font-semibold">Welcome to your CRM Dashboard</h2>} />
+        <Route path="/dashboard" element={<Navigation />}>
+          <Route index element={<Dashboard />} />
           <Route path="clients" element={<ClientManagement />} />
           <Route path="services" element={<ServiceRequests />} />
           <Route path="tasks" element={<TaskManagement />} />
