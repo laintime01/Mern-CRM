@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { getClients, createClient, updateClient, deleteClient } from '../api/clients';
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [currentClient, setCurrentClient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,55 +13,62 @@ const ClientManagement = () => {
   const [clientsPerPage] = useState(10);
   const [totalClients, setTotalClients] = useState(0);
 
-  useEffect(() => {
-    fetchClients();
-  }, [currentPage, searchTerm]);
-
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`/api/clients?page=${currentPage}&limit=${clientsPerPage}&search=${searchTerm}`, {
-        headers: { 'x-auth-token': localStorage.getItem('token') }
-      });
-      setClients(res.data.clients);
-      setTotalClients(res.data.total);
+      const res = await getClients(currentPage, clientsPerPage, searchTerm);
+      setClients(res.data.clients || []);
+      setTotalClients(res.data.total || 0);
+      setError(null);
     } catch (err) {
       console.error('Error fetching clients', err);
+      setClients([]);
+      setTotalClients(0);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [currentPage, clientsPerPage, searchTerm]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const handleCreateClient = async (clientData) => {
+    setLoading(true);
     try {
-      await axios.post('/api/clients', clientData, {
-        headers: { 'x-auth-token': localStorage.getItem('token') }
-      });
+      await createClient(clientData);
       fetchClients();
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error creating client', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateClient = async (clientData) => {
+    setLoading(true);
     try {
-      await axios.put(`/api/clients/${clientData._id}`, clientData, {
-        headers: { 'x-auth-token': localStorage.getItem('token') }
-      });
+      await updateClient(clientData._id, clientData);
       fetchClients();
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error updating client', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteClient = async (clientId) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
+      setLoading(true);
       try {
-        await axios.delete(`/api/clients/${clientId}`, {
-          headers: { 'x-auth-token': localStorage.getItem('token') }
-        });
+        await deleteClient(clientId);
         fetchClients();
       } catch (err) {
         console.error('Error deleting client', err);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -115,46 +124,56 @@ const ClientManagement = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {clients.map(client => (
-              <tr key={client._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">{client.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{client.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{client.phone}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{client.company}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => openModal(client)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-3"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClient(client._id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+            {clients.length > 0 ? (
+              clients.map(client => (
+                <tr key={client._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">{client.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{client.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{client.phone}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{client.company}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => openModal(client)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClient(client._id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                  {loading ? 'Loading...' : 'No data'}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
-      <div className="mt-6 flex justify-center">
-        {[...Array(Math.ceil(totalClients / clientsPerPage)).keys()].map(number => (
-          <button
-            key={number + 1}
-            onClick={() => paginate(number + 1)}
-            className={`mx-1 px-4 py-2 rounded-md ${
-              currentPage === number + 1
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            } transition duration-300 ease-in-out`}
-          >
-            {number + 1}
-          </button>
-        ))}
-      </div>
+      {totalClients > clientsPerPage && (
+        <div className="mt-6 flex justify-center">
+          {[...Array(Math.ceil(totalClients / clientsPerPage)).keys()].map(number => (
+            <button
+              key={number + 1}
+              onClick={() => paginate(number + 1)}
+              className={`mx-1 px-4 py-2 rounded-md ${
+                currentPage === number + 1
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              } transition duration-300 ease-in-out`}
+            >
+              {number + 1}
+            </button>
+          ))}
+        </div>
+      )}
       {isModalOpen && (
         <ClientModal
           client={currentClient}
