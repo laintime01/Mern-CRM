@@ -11,11 +11,6 @@ function Navigation() {
   return (
     <div className="flex h-screen bg-gray-100">
       <nav className="bg-blue-800 text-white w-64 min-h-screen p-4">
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-            <span className="text-blue-800 text-2xl font-bold">CRM</span>
-          </div>
-        </div>
         <div className="space-y-2">
           <Link to="/dashboard" className={`flex items-center py-2 px-4 rounded transition-colors duration-200 ${isActive('/dashboard')}`}>
             <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
