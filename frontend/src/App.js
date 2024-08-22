@@ -7,7 +7,8 @@ import ServiceRequests from './components/ServiceRequests';
 import TaskManagement from './components/TaskManagement';
 import Integration from './components/Integration';
 import Navigation from './components/Navigation';
-import Header from './components/Header'; // 导入新的 Header 组件
+import Header from './components/Header';
+import Users from './components/Users';
 
 function App() {
   return (
@@ -28,8 +29,9 @@ function App() {
           <Route path="services" element={<ServiceRequests />} />
           <Route path="tasks" element={<TaskManagement />} />
           <Route path="integration" element={<Integration />} />
+          <Route path="users" element={<Users />} />
         </Route>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

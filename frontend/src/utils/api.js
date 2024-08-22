@@ -22,11 +22,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use((response) => {
   return response;
 }, (error) => {
-  if (error.response.status === 401) {
-    // Handle unauthorized access (e.g., redirect to login)
-    localStorage.removeItem('token');
-    window.location = '/login';
-  }
+  // 移除了 401 错误的特殊处理
+  console.error('API Error:', error);
   return Promise.reject(error);
 });
 
