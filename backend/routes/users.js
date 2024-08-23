@@ -130,20 +130,18 @@ router.put('/:id', async (req, res) => {
   const { name, email, role } = req.body;
 
   try {
-    let user = await User.findById(req.params.id);
+    let user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email, role },
+      { new: true, runValidators: true }
+    ).select('-password');
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.role = role || user.role;
-
-    await user.save();
     console.log('User updated successfully');
-
     res.json(user);
   } catch (err) {
     console.error('Error updating user:', err);
@@ -158,16 +156,14 @@ router.delete('/:id', async (req, res) => {
   console.log(`Received delete request for user ID: ${req.params.id}`);
 
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByIdAndDelete(req.params.id);
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    await user.remove();
     console.log('User removed successfully');
-
     res.json({ msg: 'User removed' });
   } catch (err) {
     console.error('Error deleting user:', err);
@@ -183,17 +179,18 @@ router.put('/:id/role', async (req, res) => {
   const { role } = req.body;
 
   try {
-    let user = await User.findById(req.params.id);
+    let user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true, runValidators: true }
+    ).select('-password');
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    user.role = role;
-    await user.save();
     console.log(`User role updated to: ${role}`);
-
     res.json(user);
   } catch (err) {
     console.error('Error updating user role:', err);
