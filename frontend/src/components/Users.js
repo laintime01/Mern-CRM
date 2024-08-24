@@ -18,6 +18,7 @@ function Users() {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      alert(`Failed to fetch users: ${error.response?.data?.msg || error.message}`);
     }
   };
 
@@ -29,8 +30,7 @@ function Users() {
       setIsModalOpen(false);
       fetchUsers();
     } catch (error) {
-      console.error('Error creating user:', error.response?.data || error.message);
-      // 显示错误消息给用户
+      console.error('Error creating user:', error);
       alert(`Failed to create user: ${error.response?.data?.msg || error.message}`);
     }
   };
@@ -38,11 +38,12 @@ function Users() {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      await userApi.updateUser(editingUser.id, editingUser);
+      await userApi.updateUser(editingUser._id, editingUser);
       setEditingUser(null);
       fetchUsers();
     } catch (error) {
       console.error('Error updating user:', error);
+      alert(`Failed to update user: ${error.response?.data?.msg || error.message}`);
     }
   };
 
@@ -52,6 +53,7 @@ function Users() {
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
+      alert(`Failed to delete user: ${error.response?.data?.msg || error.message}`);
     }
   };
 
@@ -61,6 +63,7 @@ function Users() {
       fetchUsers();
     } catch (error) {
       console.error('Error assigning role:', error);
+      alert(`Failed to assign role: ${error.response?.data?.msg || error.message}`);
     }
   };
 
@@ -161,9 +164,9 @@ function Users() {
           <tbody className="text-gray-600 text-sm font-light">
             {filteredUsers.length > 0 ? (
               filteredUsers.map(user => (
-                <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-100">
+                <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-100">
                   <td className="py-3 px-6 text-left whitespace-nowrap">
-                    {editingUser && editingUser.id === user.id ? (
+                    {editingUser && editingUser._id === user._id ? (
                       <input
                         type="text"
                         value={editingUser.name}
@@ -175,7 +178,7 @@ function Users() {
                     )}
                   </td>
                   <td className="py-3 px-6 text-left">
-                    {editingUser && editingUser.id === user.id ? (
+                    {editingUser && editingUser._id === user._id ? (
                       <input
                         type="email"
                         value={editingUser.email}
@@ -187,7 +190,7 @@ function Users() {
                     )}
                   </td>
                   <td className="py-3 px-6 text-left">
-                    {editingUser && editingUser.id === user.id ? (
+                    {editingUser && editingUser._id === user._id ? (
                       <select
                         value={editingUser.role}
                         onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
@@ -199,7 +202,7 @@ function Users() {
                     ) : (
                       <select
                         value={user.role}
-                        onChange={(e) => handleAssignRole(user.id, e.target.value)}
+                        onChange={(e) => handleAssignRole(user._id, e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="admin">Admin</option>
@@ -208,7 +211,7 @@ function Users() {
                     )}
                   </td>
                   <td className="py-3 px-6 text-center">
-                    {editingUser && editingUser.id === user.id ? (
+                    {editingUser && editingUser._id === user._id ? (
                       <>
                         <button
                           onClick={handleUpdateUser}
@@ -232,7 +235,7 @@ function Users() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteUser(user._id)}
                           className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
                         >
                           Delete

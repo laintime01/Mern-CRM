@@ -3,8 +3,6 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-// 暂时注释掉 auth 中间件
-// const auth = require('../middleware/auth');
 
 // 测试路由
 router.get('/test', (req, res) => {
@@ -33,7 +31,7 @@ router.get('/', async (req, res) => {
 router.post('/register', async (req, res) => {
   console.log('Received registration request');
   const { name, email, password, role } = req.body;
-  console.log('Registration data:', { name, email, role }); // 不记录密码
+  console.log('Registration data:', { name, email, role });
 
   try {
     let user = await User.findOne({ email });
@@ -130,20 +128,18 @@ router.put('/:id', async (req, res) => {
   const { name, email, role } = req.body;
 
   try {
-    let user = await User.findById(req.params.id);
+    let user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email, role },
+      { new: true, runValidators: true }
+    ).select('-password');
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.role = role || user.role;
-
-    await user.save();
     console.log('User updated successfully');
-
     res.json(user);
   } catch (err) {
     console.error('Error updating user:', err);
@@ -158,16 +154,14 @@ router.delete('/:id', async (req, res) => {
   console.log(`Received delete request for user ID: ${req.params.id}`);
 
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByIdAndDelete(req.params.id);
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    await user.remove();
     console.log('User removed successfully');
-
     res.json({ msg: 'User removed' });
   } catch (err) {
     console.error('Error deleting user:', err);
@@ -183,20 +177,74 @@ router.put('/:id/role', async (req, res) => {
   const { role } = req.body;
 
   try {
-    let user = await User.findById(req.params.id);
+    let user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true, runValidators: true }
+    ).select('-password');
 
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    user.role = role;
-    await user.save();
     console.log(`User role updated to: ${role}`);
-
     res.json(user);
   } catch (err) {
     console.error('Error updating user role:', err);
+    res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
+});
+
+// @route   POST api/users/wix-sync
+// @desc    Sync a user from Wix
+// @access  Public (考虑添加某种验证机制)
+router.post('/wix-sync', async (req, res) => {
+  console.log('Received Wix user sync request');
+  const { wixId, email, name } = req.body;
+
+  try {
+    let user = await User.findOne({ wixId });
+
+    if (user) {
+      // 更新现有用户
+      user.name = name;
+      user.email = email;
+      // 可以更新其他字段
+    } else {
+      // 创建新用户
+      user = new User({
+        wixId,
+        name,
+        email,
+        // 为 Wix 用户设置一个默认角色
+        role: 'wix-user',
+        // 为 Wix 用户设置一个随机密码，因为他们不会直接使用这个系统登录
+        password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10)
+      });
+    }
+
+    await user.save();
+    console.log(`Wix user ${wixId} synced successfully`);
+    res.json({ message: 'User synced successfully', user: { id: user._id, name, email } });
+  } catch (err) {
+    console.error('Error syncing Wix user:', err);
+    res.status(500).json({ msg: 'Server error', error: err.message });
+  }
+});
+
+// @route   GET api/users/wix/:wixId
+// @desc    Get a user by Wix ID
+// @access  Public (考虑添加某种验证机制)
+router.get('/wix/:wixId', async (req, res) => {
+  try {
+    const user = await User.findOne({ wixId: req.params.wixId }).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error('Error fetching Wix user:', err);
     res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });
