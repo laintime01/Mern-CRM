@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const ClientSchema = new mongoose.Schema({
+  wixId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   name: {
     type: String,
     required: true
