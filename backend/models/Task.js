@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const TaskSchema = new mongoose.Schema({
+  wixId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   title: {
     type: String,
     required: true
