@@ -4,7 +4,8 @@ const ClientSchema = new mongoose.Schema({
   wixId: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true,  // This allows the field to be optional
+    index: true    // This improves query performance for this field
   },
   name: {
     type: String,
@@ -17,24 +18,6 @@ const ClientSchema = new mongoose.Schema({
   },
   phone: {
     type: String
-  },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String
-  },
-  company: {
-    type: String
-  },
-  notes: {
-    type: String
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
   },
   createdAt: {
     type: Date,
