@@ -1,63 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
 const Client = require('../models/Client');
-const validate = require('../middleware/validate');
-
 
 // @route   POST api/clients
 // @desc    Create a new client
-// @access  Private
-router.post('/', auth, async (req, res) => {
+// @access  Public (for testing)
+router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, address, company, notes } = req.body;
+    const { name, email, phone, wixId } = req.body;
 
     const newClient = new Client({
       name,
       email,
       phone,
-      address,
-      company,
-      notes,
-      createdBy: req.user.id
+      wixId  // This will be undefined if not provided in the request
     });
 
     const client = await newClient.save();
     res.json(client);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error creating client:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 
 // @route   GET api/clients
 // @desc    Get all clients
-// @access  Private
-router.get('/', auth, async (req, res) => {
-    try {
-      const { status, priority, assignedTo } = req.query;
-      let query = {};
-  
-      if (status) query.status = status;
-      if (priority) query.priority = priority;
-      if (assignedTo) query.assignedTo = assignedTo;
-  
-      const tasks = await Task.find(query)
-        .sort({ createdAt: -1 })
-        .populate('assignedTo', ['name', 'email'])
-        .populate('relatedTo')
-        .populate('createdBy', ['name', 'email']);
-      res.json(tasks);
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
-  });
+// @access  Public (for testing)
+router.get('/', async (req, res) => {
+  try {
+    const clients = await Client.find().sort({ createdAt: -1 });
+    res.json(clients);
+  } catch (err) {
+    console.error('Error fetching clients:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+});
 
 // @route   GET api/clients/:id
 // @desc    Get client by ID
-// @access  Private
-router.get('/:id', auth, async (req, res) => {
+// @access  Public (for testing)
+router.get('/:id', async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);
 
@@ -65,45 +48,32 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Client not found' });
     }
 
-    // Make sure user owns client
-    if (client.createdBy.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
-
     res.json(client);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error fetching client:', err);
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ msg: 'Client not found' });
     }
-    res.status(500).send('Server Error');
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 
 // @route   PUT api/clients/:id
 // @desc    Update client
-// @access  Private
-router.put('/:id', auth, async (req, res) => {
-  const { name, email, phone, address, company, notes } = req.body;
+// @access  Public (for testing)
+router.put('/:id', async (req, res) => {
+  const { name, email, phone } = req.body;
 
   // Build client object
   const clientFields = {};
   if (name) clientFields.name = name;
   if (email) clientFields.email = email;
   if (phone) clientFields.phone = phone;
-  if (address) clientFields.address = address;
-  if (company) clientFields.company = company;
-  if (notes) clientFields.notes = notes;
 
   try {
     let client = await Client.findById(req.params.id);
 
     if (!client) return res.status(404).json({ msg: 'Client not found' });
-
-    // Make sure user owns client
-    if (client.createdBy.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
 
     client = await Client.findByIdAndUpdate(
       req.params.id,
@@ -113,34 +83,29 @@ router.put('/:id', auth, async (req, res) => {
 
     res.json(client);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error updating client:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 
 // @route   DELETE api/clients/:id
 // @desc    Delete client
-// @access  Private
-router.delete('/:id', auth, async (req, res) => {
+// @access  Public (for testing)
+router.delete('/:id', async (req, res) => {
   try {
     let client = await Client.findById(req.params.id);
 
     if (!client) return res.status(404).json({ msg: 'Client not found' });
 
-    // Make sure user owns client
-    if (client.createdBy.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
-
     await Client.findByIdAndRemove(req.params.id);
 
     res.json({ msg: 'Client removed' });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error deleting client:', err);
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ msg: 'Client not found' });
     }
-    res.status(500).send('Server Error');
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 

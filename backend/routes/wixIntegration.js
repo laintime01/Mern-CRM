@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Client = require('../models/Client');
 const Task = require('../models/Task');
-const Service = require('../models/Service');
+const Service = require('../models/ServiceRequest');
 
 // 同步 Wix 客户
 router.post('/sync-clients', async (req, res) => {
